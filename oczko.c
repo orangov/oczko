@@ -3,12 +3,22 @@
 #include<stdlib.h>
 #include<time.h>
 
+#ifdef _WIN32
+#include <Windows.h> //wersja Windows
+#include <conio.h>
+#include <ctype.h>
+#else
+#include <unistd.h> //wersja linux
+#endif
+
+
 typedef enum 
 {
     GRAJ = 1,
     STATYSTYKI = 2,
     ZASADY = 3,
-    WYJDZ = 4
+    PUNKTACJA = 4,
+    WYJDZ = 5
 } TMenu;
 
 TMenu menu();
@@ -18,7 +28,6 @@ void inicjalizacjaTalii(int*);
 const char* kolorKarty(int);
 int wartoscKarty(int);
 const char* figuraKarty(int);
-void wyjmijKarte(int*, int);
 void rekaGracza(int*, int);
 int losuj(int, int*, int*);
 int wykonajRuch();
@@ -27,14 +36,21 @@ void ktoWygral(int, int);
 void podsumowanieGry(int*, int, int*, int);
 void statusGry(int*, int , int* , int);
 void wyswietlZasady();
+void wyswietlP();
 
+bool wczytajPlik();
+
+int t[4]; 
 
 int main()
 {
-	system("cls");
+	
+	system("cls||clear");
 
-	//STATYSTYKI??
-	//MOZE GETCH?
+	//TODO przeniesc prototyp dodawania statystyk po meczu
+	//reset statystyk??
+	//po wyborze w menu cos typu nacisnij cokolwiek aby wrocic do menu
+	//to samo po zakonczonej grze
 	srand(time( NULL ));
 	int kartyGracza[10];
 	int kartyBankiera[10];
@@ -52,7 +68,7 @@ int main()
 		switch (opcje)
 		{
 			case GRAJ:
-				system("cls");
+			//	system("cls||clear");
 				inicjalizacjaTalii(talia);
 				liczbaKartg = 0;
 				sumag = 0;
@@ -71,17 +87,16 @@ int main()
 				{	
 					if (ruch==1)
 					{
-						
-						system("cls");
 						losuj(liczbaKartg, talia, kartyGracza);			
 						liczbaKartg ++;
+						system("cls||clear");
 						statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
 						if (sumaKart(kartyGracza, liczbaKartg)<21)
 							ruch = wykonajRuch();
 					}
 					else
 					{
-						system("cls");
+						system("cls||clear");
 						printf("Podano zla wartosc \n");
 						statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
 						ruch = wykonajRuch();
@@ -96,6 +111,14 @@ int main()
 					{
 						if(sumaKart(kartyBankiera, liczbaKartb)<15)
 						{
+							system("cls||clear");
+							statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
+							printf("---Ruch Bankiera---");
+							#ifdef _WIN32
+							Sleep(800);
+							#else
+							usleep(800000);
+							#endif
 							losuj(liczbaKartb, talia, kartyBankiera);
 							liczbaKartb ++;
 						}
@@ -104,6 +127,14 @@ int main()
 						else if(sumaKart(kartyBankiera, liczbaKartg)<=18)
 							if(sumaKart(kartyBankiera, liczbaKartb) < sumaKart(kartyGracza, liczbaKartg))
 							{
+								system("cls||clear");
+								statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
+								printf("---Ruch Bankiera---");
+								#ifdef _WIN32
+								Sleep(800);
+								#else
+								usleep(800000);
+								#endif
 								losuj(liczbaKartb, talia, kartyBankiera);
 								liczbaKartb ++;
 							}
@@ -115,8 +146,21 @@ int main()
 				}
 				podsumowanieGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
 			break;
-			case STATYSTYKI: break;
+			case STATYSTYKI:
+				system("cls||clear");
+				if (!wczytajPlik())
+				{
+					printf("Blad wczytywania danych\n");
+					return 1;
+				}
+					printf("Liczba rozegranych meczy: %d\nZwyciestwa Gracza: %d (%.2f%%)\nZwyciestwa Bankiera: %d (%.2f%%)\nLiczba remisow: %d (%.2f%%)\n ", t[0], t[1], 100.00*t[1]/t[0], t[2], 100.00*t[2]/t[0], t[3], 100.00*t[3]/t[0] ); 
+			break;
 			case ZASADY: wyswietlZasady(); break;
+			case PUNKTACJA: 
+				wyswietlP();
+				printf("Press Any Key to Continue\n");
+				_getch();
+				break;
 			case WYJDZ: break;
 		}
 	}while (opcje != WYJDZ);
@@ -124,22 +168,38 @@ int main()
 
 return 0;
 }
+bool wczytajPlik()
+{
+	FILE *f = fopen("stats.txt","rt");
+    if (f == NULL)
+    {
+        printf("Blad otwarcia pliku\n");
+        return 1;
+    }
+    int a;
+    int b;
+    int c;
+    int d;
+    if (fscanf(f,"%d%d%d%d", &t[0], &t[1], &t[2], &t[3])==4)	
+	{
+
+		return true;
+    }
+}
 
 int losuj(int liczbaKart, int* talia, int* kartyGracza)
 {
 	int karta = rand()%52+1; 
-	if(karta >=1 && karta<=52)
+	
+	if (talia[karta-1] != 0)
 	{
 		kartyGracza[liczbaKart] = karta;
-		if (talia[karta-1] != 0)
-		{
-			
-			talia[karta-1] = 0;
-	
-			return karta;
-		}
+		talia[karta-1] = 0;
+
+		return karta;
 	}
-		losuj(liczbaKart, talia, kartyGracza);
+
+	losuj(liczbaKart, talia, kartyGracza);
 }
 void inicjalizacjaTalii(int* talia)
 {
@@ -147,11 +207,7 @@ void inicjalizacjaTalii(int* talia)
 		talia[i-1] = i;
 }
 
-void wyjmijKarte(int* talia, int karta)
-{
-	
-	
-}
+
 const char* kolorKarty(int karta)
 {
 	
@@ -233,13 +289,15 @@ void podsumowanieGry(int* kartyGracza, int liczbaKartg, int* kartyBankiera, int 
 	
 	
 	if (sumag == 22 && liczbaKartg == 2 || sumab == 22 && liczbaKartb == 2)
-		if (sumag == 22)
+		
+		if (sumab == 22 && sumab == 22)
+
 		{
-			printf("---PERSKIE OCZKO---\n");
-			printf("---WYGRYWASZ---\n");
+			printf("---PODWOJNE PERSKIE OCZKO---");
+			printf("---REMIS---\n");
 			printf("----------------------\n");
 		}
-		else if (sumab == 22)
+		else if (sumag == 22)
 		{
 			printf("---PERSKIE OCZKO---\n");
 			printf("---WYGRYWASZ---\n");
@@ -247,10 +305,11 @@ void podsumowanieGry(int* kartyGracza, int liczbaKartg, int* kartyBankiera, int 
 		}
 		else
 		{
-			printf("---PODWOJNE PERSKIE OCZKO---");
-			printf("---REMIS---\n");
+			printf("---PERSKIE OCZKO---\n");
+			printf("---WYGRYWA BANKIER---\n");
 			printf("----------------------\n");
 		}
+		
 	else 
 		ktoWygral(sumag, sumab);
 }
@@ -307,20 +366,22 @@ void ktoWygral(int sumag, int sumab)
 
 void wyswietlZasady()
 {
-	system("cls");
+	system("cls||clear");
 	printf("----------------ZASADY-----------------\n");
 	printf("Gra polega na tym, aby osiagnac wartosc liczbowa posiadanych kart jak nalblizsza (ale nie wieksza) 21.\n");
 	printf("Gracz otrzymuje kolejne karty z talii dotad, az zadecyduje, ze nie chce wiecej kart, lub otrzyma wynik 21 lub wiekszy.\n");
-	printf("Suma wieksza lub rowna 22 oznacza przegrana. Wyjatkiem jest perskie oczko (dwa asy).\n");
-	printf("Perskie oczko zawsze oznacza wygrana.\n");
+	printf("Bankier musi dobierac karty do momentu, az jego liczba punktow bedzie wieksza lub rowna 15.\n");
+	printf("Jezeli bankier po dobraniu karty ma 18 punktow lub wiecej, nie moze dobrac wiecej kart.\n");
+	printf("Suma wieksza lub rowna 22 oznacza przegrana. Wyjatkiem jest perskie oczko (dwa asy).\nPerskie oczko oznacza wygrana.\n");
 	printf("Jezeli zaden z graczy nie otrzyma wyniku 21, wygrywa ten, kto byl najblizej wartosci.\n");
 	printf("-----------------\n");
+
+}
+void wyswietlP()
+{
+	system("cls||clear");
 	printf("---PUNKTACJA---\n");
-	printf("2 do 10 - tyle co numer karty\n");
-	printf("walet 2\n");
-	printf("dama 3\n");
-	printf("krol 5\n");
-	printf("as 11\n");
+	printf("2 do 10 - tyle pkt. co numer karty\nwalet - 2 pkt.\ndama - 3 pkt.\nkrol - 5 pkt.\nas - 11 pkt.\n");
 	printf("-----------------\n");
 }
 
@@ -340,7 +401,8 @@ TMenu menu()
 	printf("1. Graj\n");
 	printf("2. Statystyki\n");
 	printf("3. Zasady\n");
-	printf("4. Wyjscie\n");
+	printf("4. Punktacja\n");
+	printf("5. Wyjscie\n");
 	int opcje;
 	scanf("%d", &opcje);
 	return opcje;
