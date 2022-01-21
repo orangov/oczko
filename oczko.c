@@ -3,14 +3,11 @@
 #include<stdlib.h>
 #include<time.h>
 
-#ifdef _WIN32
-#include <Windows.h> //wersja Windows
-#include <conio.h>
-#include <ctype.h>
+#ifdef _WIN32 
+#include <Windows.h> //sleep dla windows
 #else
-#include <unistd.h> //wersja linux
+#include <unistd.h>//sleep dla linux
 #endif
-
 
 typedef enum 
 {
@@ -38,6 +35,7 @@ void statusGry(int*, int , int* , int);
 void wyswietlZasady();
 void wyswietlP();
 
+bool zapiszStatystyki();
 bool wczytajPlik();
 
 int t[4]; 
@@ -47,10 +45,6 @@ int main()
 	
 	system("cls||clear");
 
-	//TODO przeniesc prototyp dodawania statystyk po meczu
-	//reset statystyk??
-	//po wyborze w menu cos typu nacisnij cokolwiek aby wrocic do menu
-	//to samo po zakonczonej grze
 	srand(time( NULL ));
 	int kartyGracza[10];
 	int kartyBankiera[10];
@@ -64,7 +58,6 @@ int main()
 	do{
 		
 		opcje = menu();
-		
 		switch (opcje)
 		{
 			case GRAJ:
@@ -104,7 +97,7 @@ int main()
 				}while(ruch != 2 && sumaKart(kartyGracza, liczbaKartg)<21);
 				
 				//-----------------ruch bankiera---------------
-				int koniec=1;
+				bool koniec=true;
 				if(sumaKart(kartyGracza, liczbaKartg)<=21)
 				{
 					do
@@ -113,7 +106,7 @@ int main()
 						{
 							system("cls||clear");
 							statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
-							printf("---Ruch Bankiera---");
+							printf("---Ruch Bankiera---\n");
 							#ifdef _WIN32
 							Sleep(800);
 							#else
@@ -124,12 +117,12 @@ int main()
 						}
 						
 						
-						else if(sumaKart(kartyBankiera, liczbaKartg)<=18)
+						else if(sumaKart(kartyBankiera, liczbaKartb)<18)
 							if(sumaKart(kartyBankiera, liczbaKartb) < sumaKart(kartyGracza, liczbaKartg))
 							{
 								system("cls||clear");
 								statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
-								printf("---Ruch Bankiera---");
+								printf("---Ruch Bankiera---\n");
 								#ifdef _WIN32
 								Sleep(800);
 								#else
@@ -138,13 +131,19 @@ int main()
 								losuj(liczbaKartb, talia, kartyBankiera);
 								liczbaKartb ++;
 							}
-							
 							else
-								koniec = 0 ;
+								koniec = false;
+						else
+							koniec = false;
 						
 					}while(sumaKart(kartyBankiera, liczbaKartb)<18 && koniec);
 				}
 				podsumowanieGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
+				if (!zapiszStatystyki())
+				{
+					printf("Blad wczytywania danych\n");
+					return 1;
+				}
 			break;
 			case STATYSTYKI:
 				system("cls||clear");
@@ -156,18 +155,19 @@ int main()
 					printf("Liczba rozegranych meczy: %d\nZwyciestwa Gracza: %d (%.2f%%)\nZwyciestwa Bankiera: %d (%.2f%%)\nLiczba remisow: %d (%.2f%%)\n ", t[0], t[1], 100.00*t[1]/t[0], t[2], 100.00*t[2]/t[0], t[3], 100.00*t[3]/t[0] ); 
 			break;
 			case ZASADY: wyswietlZasady(); break;
-			case PUNKTACJA: 
-				wyswietlP();
-				printf("Press Any Key to Continue\n");
-				_getch();
-				break;
+			case PUNKTACJA: wyswietlP(); break;
 			case WYJDZ: break;
+			default: 
+				system("cls||clear");
+				printf("Wprowadzono zla wartosc (wprowadz liczbe 1-5)\n");
+				break;
 		}
 	}while (opcje != WYJDZ);
 
 
 return 0;
 }
+
 bool wczytajPlik()
 {
 	FILE *f = fopen("stats.txt","rt");
@@ -176,15 +176,25 @@ bool wczytajPlik()
         printf("Blad otwarcia pliku\n");
         return 1;
     }
-    int a;
-    int b;
-    int c;
-    int d;
     if (fscanf(f,"%d%d%d%d", &t[0], &t[1], &t[2], &t[3])==4)	
 	{
 
 		return true;
     }
+}
+
+bool zapiszStatystyki()
+{
+    FILE *fi = fopen("stats.txt","wt");
+    if (fi == NULL)
+    {
+        printf("Blad otwarcia pliku\n");
+        return 1;
+    }
+    if (fprintf(fi, "%d\n%d\n%d\n%d", t[0], t[1], t[2], t[3]) != EOF)
+        printf("\n");
+    fclose(fi); 
+    return true;
 }
 
 int losuj(int liczbaKart, int* talia, int* kartyGracza)
@@ -281,7 +291,7 @@ void rekaGracza(int* rekaGracza, int liczbaKart)
 }
 void podsumowanieGry(int* kartyGracza, int liczbaKartg, int* kartyBankiera, int liczbaKartb)
 {
-	system("cls");
+	system("cls||clear");
 	int sumag = sumaKart(kartyGracza, liczbaKartg);
 	int sumab = sumaKart(kartyBankiera, liczbaKartb);		
 	statusGry(kartyGracza, liczbaKartg, kartyBankiera, liczbaKartb);
@@ -289,27 +299,33 @@ void podsumowanieGry(int* kartyGracza, int liczbaKartg, int* kartyBankiera, int 
 	
 	
 	if (sumag == 22 && liczbaKartg == 2 || sumab == 22 && liczbaKartb == 2)
-		
+	{	
 		if (sumab == 22 && sumab == 22)
 
 		{
 			printf("---PODWOJNE PERSKIE OCZKO---");
 			printf("---REMIS---\n");
 			printf("----------------------\n");
+			t[0]++;
+			t[3]++;
 		}
 		else if (sumag == 22)
 		{
 			printf("---PERSKIE OCZKO---\n");
 			printf("---WYGRYWASZ---\n");
 			printf("----------------------\n");
+			t[0]++;
+			t[1]++;
 		}
 		else
 		{
 			printf("---PERSKIE OCZKO---\n");
 			printf("---WYGRYWA BANKIER---\n");
 			printf("----------------------\n");
-		}
-		
+			t[0]++;
+			t[2]++;
+	}
+	}	
 	else 
 		ktoWygral(sumag, sumab);
 }
@@ -335,6 +351,8 @@ void ktoWygral(int sumag, int sumab)
 		{
 			printf("---WYGRYWASZ---\n");
 			printf("----------------------\n");
+			t[0]++;
+			t[1]++;
 			return;
 		}
 		else if (sumab<=21)
@@ -342,24 +360,32 @@ void ktoWygral(int sumag, int sumab)
 			{
 				printf("---WYGRYWASZ---\n");
 				printf("----------------------\n");
+				t[0]++;
+				t[1]++;
 				return;
 			}
 			else if (sumag < sumab)
 			{
 				printf("---WYGRYWA BANKIER---\n");
 				printf("----------------------\n");
+				t[0]++;
+				t[2]++;
 				return;
 			}
 	if(sumag>21)
 	{
 		printf("---WYGRYWA BANKIER---\n");
 		printf("----------------------\n");
+		t[0]++;
+		t[2]++;
 		return;
 	}
 	else
 	{
 		printf("---REMIS---\n");
 		printf("----------------------\n");
+		t[0]++;
+		t[3]++;
 		return;
 	}
 }
@@ -381,7 +407,7 @@ void wyswietlP()
 {
 	system("cls||clear");
 	printf("---PUNKTACJA---\n");
-	printf("2 do 10 - tyle pkt. co numer karty\nwalet - 2 pkt.\ndama - 3 pkt.\nkrol - 5 pkt.\nas - 11 pkt.\n");
+	printf("2 do 10 - tyle pkt. co numer karty\nwalet - 2 pkt.\ndama - 3 pkt.\nkrol - 4 pkt.\nas - 11 pkt.\n");
 	printf("-----------------\n");
 }
 
@@ -404,6 +430,11 @@ TMenu menu()
 	printf("4. Punktacja\n");
 	printf("5. Wyjscie\n");
 	int opcje;
-	scanf("%d", &opcje);
-	return opcje;
+	
+	if(scanf("%d", &opcje)==1)
+		return opcje;
+	else
+	{
+		return 0;
+	}
 }
