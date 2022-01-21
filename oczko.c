@@ -54,14 +54,17 @@ int main()
 	int liczbaKartb = 0;
 	int sumag, sumab;
 	TMenu opcje;
-	
+	if (!wczytajPlik())
+	{
+	printf("Blad wczytywania danych\n");
+	return 1;
+	}
 	do{
 		
 		opcje = menu();
 		switch (opcje)
 		{
 			case GRAJ:
-			//	system("cls||clear");
 				inicjalizacjaTalii(talia);
 				liczbaKartg = 0;
 				sumag = 0;
@@ -147,12 +150,7 @@ int main()
 			break;
 			case STATYSTYKI:
 				system("cls||clear");
-				if (!wczytajPlik())
-				{
-					printf("Blad wczytywania danych\n");
-					return 1;
-				}
-					printf("Liczba rozegranych meczy: %d\nZwyciestwa Gracza: %d (%.2f%%)\nZwyciestwa Bankiera: %d (%.2f%%)\nLiczba remisow: %d (%.2f%%)\n ", t[0], t[1], 100.00*t[1]/t[0], t[2], 100.00*t[2]/t[0], t[3], 100.00*t[3]/t[0] ); 
+				printf("Rozegrane mecze: %d\nZwyciestwa Gracza: %d (%.2f%%)\nZwyciestwa Bankiera: %d (%.2f%%)\nLiczba remisow: %d (%.2f%%)\n----------------------\n ", t[0], t[1], 100.00*t[1]/t[0], t[2], 100.00*t[2]/t[0], t[3], 100.00*t[3]/t[0] ); 
 			break;
 			case ZASADY: wyswietlZasady(); break;
 			case PUNKTACJA: wyswietlP(); break;
