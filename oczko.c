@@ -46,8 +46,8 @@ int main()
 	system("cls||clear");
 
 	srand(time( NULL ));
-	int kartyGracza[10];
-	int kartyBankiera[10];
+	int kartyGracza[15];
+	int kartyBankiera[15];
 	int talia[52];
 	int ruch;
 	int liczbaKartg = 0;
@@ -415,8 +415,11 @@ int wykonajRuch()
 	printf("1. Dobierz karte\n");
 	printf("2. Pasuj\n");
 	int wybor;
-	scanf("%d", &wybor);
-	return wybor;
+	
+	if (scanf("%d", &wybor)==1)
+		return wybor;
+	else
+		exit(1);
 }
 
 TMenu menu()
@@ -433,6 +436,7 @@ TMenu menu()
 		return opcje;
 	else
 	{
-		return 0;
+		
+		return 5;
 	}
 }
